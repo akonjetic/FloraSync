@@ -18,10 +18,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.florasync.R
 import com.example.florasync.database.entities.DiaryEntry
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -55,6 +57,7 @@ fun DiaryEntryCard(
             if (!entry.imageUri.isNullOrBlank()) {
                 AsyncImage(
                     model = "http://192.168.1.37:5072${entry.imageUri}",
+                    placeholder = painterResource(R.drawable.placeholder),
                     contentDescription = "Thumbnail",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier

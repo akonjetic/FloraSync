@@ -24,7 +24,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -32,6 +35,8 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import com.example.florasync.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.*
@@ -61,7 +66,7 @@ fun ScanScreen() {
     }
 
     val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
+        ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         hasCameraPermission = isGranted
         if (!isGranted) {
@@ -69,14 +74,16 @@ fun ScanScreen() {
         }
     }
 
-
     var expanded by remember { mutableStateOf(false) }
     var currentPhotoPath by remember { mutableStateOf("") }
+    var dropdownWidth by remember { mutableStateOf(0) }
 
     val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
-        if (success && imageUri != null) {
+        if (success && imageUri != null && success) {
+            Log.d("ScanScreen", "Picture taken: $imageUri")
             isLoading = true
-            sendToPlantNetApi(context, imageUri!!, selectedOrgans,
+            sendToPlantNetApi(
+                context, imageUri!!, selectedOrgans,
                 onResult = {
                     result = it
                     showDialog = true
@@ -87,6 +94,8 @@ fun ScanScreen() {
                     isLoading = false
                 }
             )
+        } else {
+            Log.w("ScanScreen", "Picture NOT taken or URI is null")
         }
     }
 
@@ -98,37 +107,102 @@ fun ScanScreen() {
         }
     }
 
-    Column(modifier = Modifier
-        .fillMaxSize()
-        .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(start = 16.dp, end = 16.dp, top = 48.dp)
+    ) {
+        // Naslov
+        Text("Plant Scanner", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = Color(0xFF2E7D32))
+        Text("Take a photo to identify your plant", color = Color.Gray)
 
-        Text("🌿 Scan Plant", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        Text("Select organ type and image to identify", color = Color.Gray)
+        Spacer(modifier = Modifier.height(16.dp))
 
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Text("Organ:", fontWeight = FontWeight.Medium)
-            Box {
-                OutlinedButton(onClick = { expanded = true }) {
-                    Text(selectedOrgans)
+        // Dropdown
+        Box(modifier = Modifier
+            .fillMaxWidth()
+            .wrapContentSize(Alignment.TopStart)) {
+            OutlinedButton(
+                onClick = { expanded = true },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .onGloballyPositioned { coords -> dropdownWidth = coords.size.width }
+                    .clip(RoundedCornerShape(12.dp)),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text("Organ: ${selectedOrgans.replaceFirstChar { it.uppercase() }}")
+            }
+
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                modifier = Modifier
+                    .width(with(LocalDensity.current) { dropdownWidth.toDp() })
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.surface)
+            ) {
+                listOf("leaf", "flower", "fruit", "auto").forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(option.replaceFirstChar { it.uppercase() }) },
+                        onClick = {
+                            selectedOrgans = option
+                            expanded = false
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
-                DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                    listOf("leaf", "flower", "fruit", "auto").forEach {
-                        DropdownMenuItem(
-                            text = { Text(it) },
-                            onClick = {
-                                selectedOrgans = it
-                                expanded = false
-                            }
-                        )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Slika / placeholder
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .clip(RoundedCornerShape(16.dp))
+                .background(Color(0xFFF1F1F1)),
+            contentAlignment = Alignment.Center
+        ) {
+            if (imageUri == null) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.placeholder),
+                        contentDescription = "Camera Placeholder",
+                        tint = Color(0xFF2E7D32),
+                        modifier = Modifier.size(48.dp)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Point your camera at a plant to identify it", color = Color.DarkGray)
+                }
+            } else {
+                AsyncImage(
+                    model = ImageRequest.Builder(context)
+                        .data(imageUri)
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = "Captured Image",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+
+                if (isLoading) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color(0x66000000)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = Color.White)
                     }
                 }
             }
         }
 
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Gumb s paddingom
         Button(
             onClick = {
                 if (hasCameraPermission) {
@@ -140,55 +214,84 @@ fun ScanScreen() {
                     permissionLauncher.launch(cameraPermission)
                 }
             },
-            enabled = !isLoading,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp)
+                .navigationBarsPadding(), // <- rješava overlap s BottomNav
+            shape = RoundedCornerShape(12.dp),
+            enabled = !isLoading
         ) {
-            Icon(Icons.Default.Star, contentDescription = null)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(if (isLoading) "Identifying..." else "Take Photo")
+            Text(if (isLoading) "Identifying..." else "Start Scan")
         }
 
-        imageUri?.let {
-            AsyncImage(
-                model = it,
-                contentDescription = null,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(260.dp)
-                    .clip(RoundedCornerShape(12.dp)),
-                contentScale = ContentScale.Crop
-            )
-        }
+        Spacer(modifier = Modifier.height(84.dp))
+    }
 
-        if (showDialog && result != null) {
-            AlertDialog(
-                onDismissRequest = { showDialog = false },
-                confirmButton = {
-                    TextButton(onClick = { showDialog = false }) {
-                        Text("Close")
+    // Rezultat dijalog
+    if (showDialog && result != null) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            confirmButton = {
+                TextButton(onClick = { showDialog = false }) {
+                    Text("Close")
+                }
+            },
+            shape = RoundedCornerShape(16.dp),
+            title = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = result!!.name,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF2E7D32)
+                    )
+                    Text(
+                        text = result!!.scientificName,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray
+                    )
+                }
+            },
+            text = {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    // Confidence score
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("🌿 Confidence:", fontWeight = FontWeight.Medium)
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("${result!!.confidence}%", color = Color.DarkGray)
                     }
-                },
-                title = {
-                    Text(result!!.name, fontWeight = FontWeight.Bold)
-                },
-                text = {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Scientific: ${result!!.scientificName}", fontSize = 14.sp)
-                        Text("Confidence: ${result!!.confidence}%", fontSize = 13.sp, color = Color.Gray)
-                        Text(result!!.description, fontSize = 13.sp)
+
+                    // Plant family / description
+                    Row(verticalAlignment = Alignment.Top) {
+                        Text("🏷️ Family:", fontWeight = FontWeight.Medium)
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(result!!.familyName, color = Color.DarkGray)
                     }
                 }
-            )
-        }
+            },
+            containerColor = MaterialTheme.colorScheme.surface,
+            tonalElevation = 2.dp
+        )
     }
+
 }
+
+
+
 
 data class ScanResult(
     val name: String,
     val scientificName: String,
     val confidence: Int,
-    val description: String
+    val familyName: String
 )
+
 
 fun sendToPlantNetApi(
     context: Context,
@@ -228,7 +331,6 @@ fun sendToPlantNetApi(
                     val json = JSONObject(body)
                     val results = json.getJSONArray("results")
                     if (results.length() == 0) {
-                        Log.w("PlantNetAPI", "No results found.")
                         Handler(Looper.getMainLooper()).post { onError() }
                         return
                     }
@@ -238,21 +340,20 @@ fun sendToPlantNetApi(
                     val name = species.getJSONArray("commonNames").optString(0, "Unknown")
                     val scientific = species.getString("scientificNameWithoutAuthor")
                     val score = (first.getDouble("score") * 100).toInt()
-                    val description = species.optString("family", "No description available.")
+                    val familyObj = species.optJSONObject("family")
+                    val familyName = familyObj?.optString("scientificName", "Unknown Family") ?: "Unknown Family"
 
-                    val scanResult = ScanResult(name, scientific, score, description)
-                    Handler(Looper.getMainLooper()).post {
-                        onResult(scanResult)
-                    }
+                    val scanResult = ScanResult(name, scientific, score, familyName)
+                    Handler(Looper.getMainLooper()).post { onResult(scanResult) }
 
                 } catch (e: Exception) {
                     Log.e("PlantNetAPI", "JSON parsing error: ${e.message}", e)
                     Handler(Looper.getMainLooper()).post { onError() }
                 }
             } else {
-                Log.e("PlantNetAPI", "Response failed: code=${response.code}, body=$body")
                 Handler(Looper.getMainLooper()).post { onError() }
             }
         }
     })
 }
+

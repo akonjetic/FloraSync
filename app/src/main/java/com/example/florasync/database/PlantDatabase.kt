@@ -10,13 +10,12 @@ import com.example.florasync.database.entities.DiaryEntry
 import com.example.florasync.database.entities.MyPlant
 import com.example.florasync.database.entities.PlantTask
 import com.example.florasync.database.entities.TaskOccurrence
-import com.example.florasync.database.entities.TaskOccurrenceWithTask
 import com.example.florasync.database.helpers.Converters
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-@Database(entities = [MyPlant::class, TaskOccurrence::class, PlantTask::class, DiaryEntry::class], version = 5, exportSchema = false)
+@Database(entities = [MyPlant::class, TaskOccurrence::class, PlantTask::class, DiaryEntry::class], version = 6, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class PlantDatabase : RoomDatabase() {
 
