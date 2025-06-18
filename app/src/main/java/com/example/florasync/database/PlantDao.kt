@@ -29,7 +29,6 @@ interface PlantDao {
     @Insert
     suspend fun insertMyPlant(myPlant: MyPlant) : Long
 
-
     @Insert
     suspend fun insertPlantTask(task: PlantTask): Long
 
@@ -101,7 +100,5 @@ WHERE date BETWEEN :startDate AND :endDate
             waterIcon = "🧴", lightDescription = "Medium indirect light", lightValue = "Medium",
             lightIcon = "🌥️", temperatureDescription = "18–27°C", temperatureValue = "Moderate",
             temperatureIcon = "🌡️", imageUrl = "/images/monstera_deliciosa.png", funFact = "Monstera leaves develop holes to withstand heavy rainfall.", nickname = "Kimi"))
-
-
     }
 }

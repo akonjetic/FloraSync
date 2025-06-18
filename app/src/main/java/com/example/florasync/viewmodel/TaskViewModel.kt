@@ -20,15 +20,18 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
     val todayTasks: StateFlow<List<TaskOccurrenceWithTask>> = allTasks.mapLatest { list ->
         val today = LocalDate.now()
         list.filter { it.date == today && !it.isCompleted }
+            .sortedBy { it.date }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     val upcomingTasks: StateFlow<List<TaskOccurrenceWithTask>> = allTasks.mapLatest { list ->
         val today = LocalDate.now()
         list.filter { it.date.isAfter(today) && !it.isCompleted }
+            .sortedBy { it.date }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     val completedTasks: StateFlow<List<TaskOccurrenceWithTask>> = allTasks.mapLatest { list ->
         list.filter { it.isCompleted }
+            .sortedBy { it.date }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     init {

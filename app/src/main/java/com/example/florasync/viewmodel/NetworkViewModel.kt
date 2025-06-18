@@ -21,9 +21,6 @@ import kotlinx.coroutines.launch
 
 class NetworkViewModel : ViewModel() {
 
-    val listOfAllPlants = MutableLiveData<ArrayList<PlantDto>>()
-    val chosenPlant = MutableLiveData<PlantDto>()
-
     val searchQuery = MutableStateFlow("")
 
     @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
@@ -35,17 +32,6 @@ class NetworkViewModel : ViewModel() {
             }.flow.cachedIn(viewModelScope)
         }
 
-   fun getAllPlants(context: Context){
-                viewModelScope.launch {
-                    listOfAllPlants.value = FloraSyncRetrofitInstance.getService().getPlants() as ArrayList<PlantDto>
-                }
-            }
-
-    fun getPlantById(id: Long){
-                viewModelScope.launch {
-                    chosenPlant.value = FloraSyncRetrofitInstance.getService().getPlantById(id)
-                }
-            }
 
 
 }

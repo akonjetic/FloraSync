@@ -164,6 +164,6 @@ fun DiaryCard(entry: DiaryEntry, onClick: () -> Unit) {
 
 
 fun formatDate(date: LocalDate): String {
-    val formatter = DateTimeFormatter.ofPattern("MMMM d, yyyy", Locale.getDefault())
+    val formatter = DateTimeFormatter.ofPattern("MMMM d, yyyy", Locale.ENGLISH)
     return date.format(formatter)
 }

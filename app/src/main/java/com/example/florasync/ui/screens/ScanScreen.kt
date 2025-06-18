@@ -282,9 +282,6 @@ fun ScanScreen() {
 
 }
 
-
-
-
 data class ScanResult(
     val name: String,
     val scientificName: String,

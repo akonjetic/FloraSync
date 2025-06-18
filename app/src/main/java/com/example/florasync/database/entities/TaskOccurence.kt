@@ -32,3 +32,4 @@ data class TaskOccurrenceWithTask(
     val nickname: String?
 )
 
+

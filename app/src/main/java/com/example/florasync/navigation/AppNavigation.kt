@@ -37,14 +37,17 @@ fun AppNavigation(navController: NavHostController) {
         composable(Routes.HOME) {
             val taskViewModel: TaskViewModel = viewModel()
             val diaryViewModel: DiaryViewModel = viewModel()
-            HomeScreen(navController, taskViewModel = taskViewModel, diaryViewModel = diaryViewModel) }
+            HomeScreen(
+                navController,
+                taskViewModel = taskViewModel,
+                diaryViewModel = diaryViewModel
+            )
+        }
         composable(Routes.PLANTS) { PlantsScreen(navController) }
         composable(Routes.TASKS) { TasksScreen() }
         composable(Routes.DIARY) { DiaryScreen() }
         composable(Routes.SCAN) { ScanScreen() }
         composable(Routes.ALL_PLANTS) { AllAvailablePlantsScreen() }
-
-        // 🪴 DETAIL SCREEN with plantId argument
         composable(
             route = PLANT_DETAIL,
             arguments = listOf(navArgument("plantId") { type = NavType.LongType })

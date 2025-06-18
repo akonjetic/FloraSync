@@ -22,7 +22,4 @@ class DiaryViewModel(application: Application) : AndroidViewModel(application) {
         diaryDao?.insertDiaryEntry(entry)!!
     }
 
-    fun deleteEntry(entry: DiaryEntry) = viewModelScope.launch {
-        diaryDao?.deleteEntry(entry)!!
-    }
 }

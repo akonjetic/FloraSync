@@ -1,5 +1,6 @@
 package com.example.florasync.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -43,15 +44,19 @@ fun AllAvailablePlantsScreen(
 
     var selectedPlant by remember { mutableStateOf<PlantDto?>(null) }
     var showDialog by remember { mutableStateOf(false) }
+    var nickname by remember { mutableStateOf("") }
 
-    Column(modifier = Modifier
-        .fillMaxSize()
-        .padding(16.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(start = 16.dp, end = 16.dp, top = 48.dp, bottom = 16.dp)
+    ) {
 
         Text(
             "All Available Plants",
             style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF2E7D32)
         )
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -64,76 +69,78 @@ fun AllAvailablePlantsScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 8.dp),
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(12.dp),
+            singleLine = true
         )
 
-        LazyColumn {
-            val filtered = plants.itemSnapshotList.items.filter {
-                it.name.contains(searchText, ignoreCase = true) ||
-                        it.type.contains(searchText, ignoreCase = true)
-            }
+        Spacer(modifier = Modifier.height(8.dp))
 
-            items(filtered) { plant ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 6.dp)
-                        .clickable {
-                            selectedPlant = plant
-                            showDialog = true
-                        },
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Row(
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(bottom = 80.dp)
+        ) {
+            items(plants.itemCount) { index ->
+                val plant = plants[index]
+                if (plant != null) {
+                    Card(
                         modifier = Modifier
-                            .padding(12.dp)
-                            .fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
+                            .fillMaxWidth()
+                            .clickable {
+                                selectedPlant = plant
+                                showDialog = true
+                            },
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        border = BorderStroke(1.dp, Color(0xFFE0E0E0))
                     ) {
-                        AsyncImage(
-                            model = ImageRequest.Builder(LocalContext.current)
-                                .data("${BASE_URL}${plant.imageUrl}")
-                                .crossfade(true)
-                                .build(),
-                            contentDescription = plant.name,
-                            contentScale = ContentScale.Crop,
-                            placeholder = painterResource(id = R.drawable.placeholder),
-                            error = painterResource(id = R.drawable.placeholder),
+                        Row(
                             modifier = Modifier
-                                .size(60.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                        )
+                                .padding(12.dp)
+                                .fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            AsyncImage(
+                                model = ImageRequest.Builder(LocalContext.current)
+                                    .data("${BASE_URL}${plant.imageUrl}")
+                                    .crossfade(true)
+                                    .build(),
+                                contentDescription = plant.name,
+                                contentScale = ContentScale.Crop,
+                                placeholder = painterResource(id = R.drawable.placeholder),
+                                error = painterResource(id = R.drawable.placeholder),
+                                modifier = Modifier
+                                    .size(60.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                            )
 
-                        Spacer(modifier = Modifier.width(12.dp))
+                            Spacer(modifier = Modifier.width(12.dp))
 
-                        Text(
-                            text = plant.name,
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Medium
-                        )
+                            Text(
+                                text = plant.name,
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
                     }
                 }
             }
 
-            // Loading / Error Indicators
-            plants.apply {
-                when {
-                    loadState.refresh is LoadState.Loading -> {
-                        item { CircularProgressIndicator(modifier = Modifier.fillMaxWidth()) }
-                    }
-                    loadState.append is LoadState.Loading -> {
-                        item { CircularProgressIndicator(modifier = Modifier.fillMaxWidth()) }
-                    }
-                    loadState.append is LoadState.Error -> {
-                        item { Text("Greška kod učitavanja podataka") }
+            when (plants.loadState.append) {
+                is LoadState.Loading -> item {
+                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
                     }
                 }
+
+                is LoadState.Error -> item {
+                    Text("Error loading more plants.", color = Color.Red)
+                }
+
+                else -> {}
             }
         }
     }
-
-    // Alert Dialog
-    var nickname by remember { mutableStateOf("") }
 
     if (showDialog && selectedPlant != null) {
         AlertDialog(
@@ -142,38 +149,72 @@ fun AllAvailablePlantsScreen(
                 nickname = ""
             },
             confirmButton = {
-                TextButton(onClick = {
-                    localViewModel.insertMyPlant(selectedPlant!!, nickname)
-                    showDialog = false
-                    nickname = ""
-                }) {
-                    Text("Add")
+                Button(
+                    onClick = {
+                        localViewModel.insertMyPlant(selectedPlant!!, nickname)
+                        showDialog = false
+                        nickname = ""
+                    },
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
+                ) {
+                    Text("Add", color = Color.White)
                 }
             },
             dismissButton = {
-                TextButton(onClick = {
-                    showDialog = false
-                    nickname = ""
-                }) {
+                TextButton(
+                    onClick = {
+                        showDialog = false
+                        nickname = ""
+                    }
+                ) {
                     Text("Cancel")
                 }
             },
-            title = { Text("Add plant to your collection?") },
+            title = {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        "Add to your collection",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF2E7D32)
+                    )
+                    Text(
+                        selectedPlant!!.name,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray
+                    )
+                }
+            },
             text = {
-                Column {
-                    Text("Enter a nickname to identify this plant:")
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        "Enter a nickname (optional)",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.DarkGray
+                    )
                     OutlinedTextField(
                         value = nickname,
                         onValueChange = { nickname = it },
-                        singleLine = true,
                         placeholder = { Text("e.g. Kitchen Basil") },
-                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                        shape = RoundedCornerShape(12.dp),
+                        singleLine = true,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.White, RoundedCornerShape(12.dp))
                     )
                 }
-            }
+            },
+            shape = RoundedCornerShape(16.dp),
+            containerColor = MaterialTheme.colorScheme.surface
         )
     }
 
+
 }
+
 
 

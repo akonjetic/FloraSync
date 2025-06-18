@@ -15,7 +15,6 @@ import kotlinx.coroutines.launch
 class LocalPlantsViewModel(application: Application) : AndroidViewModel(application) {
 
     private val dao = PlantDatabase.getDatabase(application)!!.getPlantDao()
-
     val myPlants: LiveData<List<MyPlant>> = dao.getAllMyPlantsFlow()
 
     fun insertMyPlant(plant: PlantDto, nickname: String) {
@@ -42,13 +41,6 @@ class LocalPlantsViewModel(application: Application) : AndroidViewModel(applicat
             dao.insertMyPlant(myPlant)
         }
     }
-
-    /*fun addMyPlant(plantDto: PlantDto) {
-        viewModelScope.launch {
-            val myPlant = plantDto.toMyPlant()
-            dao.insertMyPlant(myPlant)
-        }
-    }*/
 
     fun removePlantById(id: Long) {
         viewModelScope.launch(Dispatchers.IO) {
